@@ -1,11 +1,15 @@
-import type { Ball } from '../physics/types';
+import type { Ball, Timeline } from '../physics/types';
+import type { PhysicsParams } from '../physics/params';
+import { stateAt } from '../physics/simulate';
 import { add, scale, sub, type Vec3 } from '../physics/vec';
 import { ghostBallPosition } from '../table/aim';
 
 export type GuideDraw =
   | { kind: 'line'; from: Vec3; to: Vec3; dashed?: boolean; color?: string }
   | { kind: 'ghost'; at: Vec3; color?: string }
-  | { kind: 'cue'; at: Vec3; azimuth: number; pull?: number };
+  | { kind: 'cue'; at: Vec3; azimuth: number; pull?: number }
+  | { kind: 'path'; points: Vec3[]; color?: string }
+  | { kind: 'marker'; at: Vec3; color?: string };
 
 /** Recorre en línea recta desde la blanca: primer contacto con una bola (a 2R) o con la banda. */
 export function firstContact(
@@ -21,8 +25,9 @@ export function firstContact(
     const c = m[0] * m[0] + m[1] * m[1] - 4 * R * R;
     const disc = bq * bq - c;
     if (disc < 0) continue;
-    const s = -bq - Math.sqrt(disc);
-    if (s > 1e-9 && s < best) {
+    // bq < 0: la bola está adelante. Una bola pegada (s ≈ 0) cuenta como contacto inmediato.
+    const s = Math.max(0, -bq - Math.sqrt(disc));
+    if (bq < 0 && s < best) {
       best = s;
       ballId = b.id;
     }
@@ -43,4 +48,15 @@ export function ghostGuides(ob: Vec3, pocketPoint: Vec3, cue: Vec3 | undefined, 
   if (cue) out.push({ kind: 'line', from: cue, to: gb, dashed: true, color: 'rgba(255,209,102,0.9)' });
   out.push({ kind: 'ghost', at: gb });
   return out;
+}
+
+export function samplePath(tl: Timeline, ballId: string, p: PhysicsParams, n = 80): Vec3[] {
+  const pts: Vec3[] = [];
+  for (let i = 0; i <= n; i++) {
+    const b = stateAt(tl, (tl.duration * i) / n, p).find((x) => x.id === ballId);
+    if (!b) break;
+    pts.push(b.r);
+    if (b.motion === 'pocketed') break;
+  }
+  return pts;
 }

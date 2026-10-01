@@ -165,7 +165,29 @@ function drawGuide(ctx: Ctx, vp: Viewport, gd: GuideDraw, R: number) {
     ctx.beginPath();
     ctx.arc(x, y, 1.5, 0, 2 * Math.PI);
     ctx.fill();
-  } else {
+  } else if (gd.kind === 'path') {
+    if (gd.points.length < 2) return;
+    ctx.strokeStyle = gd.color ?? 'rgba(255,255,255,0.65)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    gd.points.forEach((pt, i) => {
+      const [x, y] = worldToScreen(vp, pt);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+  } else if (gd.kind === 'marker') {
+    const [x, y] = worldToScreen(vp, gd.at);
+    const s = Math.max(6, R * vp.scale);
+    ctx.strokeStyle = gd.color ?? '#ffd166';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(x - s, y - s);
+    ctx.lineTo(x + s, y + s);
+    ctx.moveTo(x + s, y - s);
+    ctx.lineTo(x - s, y + s);
+    ctx.stroke();
+  } else if (gd.kind === 'cue') {
     const dir: Vec3 = [Math.cos(gd.azimuth), Math.sin(gd.azimuth), 0];
     const at = (dist: number): [number, number] =>
       worldToScreen(vp, [gd.at[0] - dir[0] * dist, gd.at[1] - dir[1] * dist, 0]);
