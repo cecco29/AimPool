@@ -8,6 +8,14 @@ export interface BallLayout { balls: { id: string; at: DiamondPos }[] }
 export interface GuideFlags { aimLine: boolean; ghostBall: boolean; contactPreview: boolean }
 export interface TargetSpec { ball: string; pocket: PocketId }
 
+/** Tiro fijo definido en contenido (independiente del tamaño de mesa). power en escala 0..1 del taco. */
+export interface ShotSpec {
+  aim: { ghostOf: string; pocket: PocketId } | { at: DiamondPos } | { azimuthDeg: number };
+  power: number;
+  spin?: { a: number; b: number };
+  elevationDeg?: number;
+}
+
 export type TheoryBlock =
   | { kind: 'text'; md: string }
   | { kind: 'diagram'; setup: BallLayout; target?: TargetSpec; showGhost?: boolean; caption: string }
