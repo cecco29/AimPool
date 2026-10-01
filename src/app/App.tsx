@@ -10,6 +10,8 @@ import { ExerciseScreen } from './screens/ExerciseScreen';
 import { StatsScreen } from './screens/StatsScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
 import { UpdateBanner } from './UpdateBanner';
+import { WelcomeScreen } from './screens/WelcomeScreen';
+import { PlacementScreen } from './screens/PlacementScreen';
 
 function renderRoute(r: Route) {
   switch (r.name) {
@@ -19,6 +21,8 @@ function renderRoute(r: Route) {
     case 'exercise': return <ExerciseScreen key={`${r.id}/${r.index}`} id={r.id} index={r.index} />;
     case 'stats': return <StatsScreen />;
     case 'settings': return <SettingsScreen />;
+    case 'welcome': return <WelcomeScreen />;
+    case 'placement': return <PlacementScreen />;
   }
 }
 

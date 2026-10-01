@@ -1,3 +1,4 @@
+import type { LessonStatus } from '../progress/status';
 import type { Level } from '../content/types';
 
 export const pct = (rate: number | null): string => (rate === null ? '—' : `${Math.round(rate * 100)}%`);
@@ -8,3 +9,12 @@ export const LEVEL_LABEL: Record<Level, string> = {
   avanzado: 'Avanzado',
 };
 export const LEVELS: Level[] = ['principiante', 'intermedio', 'avanzado'];
+
+export const STATUS_LABEL: Record<LessonStatus, string> = {
+  passedTable: 'Aprobada en mesa ✓✓',
+  passedSim: 'Aprobada ✓',
+  passedPlacement: 'Aprobada por ubicación ✓',
+  inProgress: 'En progreso',
+  new: 'Nueva',
+  locked: 'Bloqueada',
+};

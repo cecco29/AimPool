@@ -6,13 +6,17 @@ export type Route =
   | { name: 'lesson'; id: string }
   | { name: 'exercise'; id: string; index: number }
   | { name: 'stats' }
-  | { name: 'settings' };
+  | { name: 'settings' }
+  | { name: 'welcome' }
+  | { name: 'placement' };
 
 export function parseHash(hash: string): Route {
   const parts = hash.replace(/^#\/?/, '').split('/').filter(Boolean).map(decodeURIComponent);
   if (parts[0] === 'map') return { name: 'map' };
   if (parts[0] === 'stats') return { name: 'stats' };
   if (parts[0] === 'settings') return { name: 'settings' };
+  if (parts[0] === 'welcome') return { name: 'welcome' };
+  if (parts[0] === 'placement') return { name: 'placement' };
   if (parts[0] === 'lesson' && parts[1]) {
     if (parts[2] === 'ex' && /^\d+$/.test(parts[3] ?? '')) return { name: 'exercise', id: parts[1], index: Number(parts[3]) };
     return { name: 'lesson', id: parts[1] };
@@ -26,6 +30,8 @@ export function href(r: Route): string {
     case 'map': return '#/map';
     case 'stats': return '#/stats';
     case 'settings': return '#/settings';
+    case 'welcome': return '#/welcome';
+    case 'placement': return '#/placement';
     case 'lesson': return `#/lesson/${encodeURIComponent(r.id)}`;
     case 'exercise': return `#/lesson/${encodeURIComponent(r.id)}/ex/${r.index}`;
   }

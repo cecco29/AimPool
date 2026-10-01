@@ -11,6 +11,8 @@ describe('routes', () => {
     ['#/lesson/ghost-ball', { name: 'lesson', id: 'ghost-ball' }],
     ['#/lesson/ghost-ball/ex/3', { name: 'exercise', id: 'ghost-ball', index: 3 }],
     ['#/lesson/ghost-ball/ex/x', { name: 'lesson', id: 'ghost-ball' }],
+    ['#/welcome', { name: 'welcome' }],
+    ['#/placement', { name: 'placement' }],
     ['#/nope', { name: 'home' }],
   ])('parse %s', (hash, route) => {
     expect(parseHash(hash)).toEqual(route);

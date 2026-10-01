@@ -1,5 +1,7 @@
 import type { ChangeEvent } from 'react';
 import type { TableSize } from '../../table/geometry';
+import type { Settings } from '../../progress/types';
+import { href } from '../routes';
 import { useProgress } from '../ProgressContext';
 import { TopBar } from '../components/TopBar';
 
@@ -20,6 +22,17 @@ export function SettingsScreen() {
           <option value="7ft">7 pies (bar)</option>
         </select>
       </label>
+      <label className="field">
+        ¿Tenés mesa para practicar?
+        <select value={settings.hasTable} data-testid="has-table" onChange={(e) => updateSettings({ hasTable: e.target.value as Settings['hasTable'] })}>
+          <option value="yes">Sí</option>
+          <option value="sometimes">A veces (la mesa es opcional)</option>
+          <option value="no">No (solo simulador)</option>
+        </select>
+      </label>
+      <a className="button" href={href({ name: 'placement' })} data-testid="repeat-placement">
+        {settings.placement ? 'Repetir test de ubicación' : 'Hacer test de ubicación'}
+      </a>
       <label className="field">
         Boca de tronera de esquina (pulgadas)
         <input type="number" min={4} max={5.5} step={0.125} defaultValue={settings.cornerMouthIn} onChange={num(4, 5.5, (v) => updateSettings({ cornerMouthIn: v }))} />

@@ -1,6 +1,6 @@
 import { motion } from 'motion/react';
-import { isUnlocked, lessonById } from '../../content/curriculum';
-import { LEVEL_LABEL, pct } from '../format';
+import { lessonById } from '../../content/curriculum';
+import { LEVEL_LABEL, pct, STATUS_LABEL } from '../format';
 import { useProgress } from '../ProgressContext';
 import { href } from '../routes';
 import { TopBar } from '../components/TopBar';
@@ -16,10 +16,11 @@ export function NotFound() {
 }
 
 export function LessonScreen({ id }: { id: string }) {
-  const { geometry, params, tableSpec, stats, passed, settings } = useProgress();
+  const { geometry, params, tableSpec, stats, status, passed, settings } = useProgress();
   const lesson = lessonById(id);
   if (!lesson) return <NotFound />;
-  const unlocked = isUnlocked(lesson, passed, settings.ignoreLocks);
+  const st = status(lesson);
+  const unlocked = st !== 'locked';
   const s = stats(lesson);
   const missing = lesson.prerequisites.filter((p) => !passed.has(p)).map((p) => lessonById(p)?.title ?? p);
   return (
@@ -31,7 +32,7 @@ export function LessonScreen({ id }: { id: string }) {
       </p>
       {!unlocked && <p className="warn">Lección bloqueada: primero aprobá {missing.join(', ')}. Podés desbloquear todo en Ajustes.</p>}
       <div className="progress-box" data-testid="lesson-progress">
-        Simulador: {pct(s.simRate)} ({s.simAttempts}) · Mesa real: {pct(s.tableRate)} ({s.tableShots} tiros){s.passed ? ' · Aprobada' : ''}
+        Simulador: {pct(s.simRate)} ({s.simAttempts}){settings.hasTable !== 'no' && ` · Mesa real: ${pct(s.tableRate)} (${s.tableShots} tiros)`} · {STATUS_LABEL[st]}
       </div>
       {lesson.theory.map((block, i) => (
         <motion.div key={i} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25, delay: i * 0.05 }}>

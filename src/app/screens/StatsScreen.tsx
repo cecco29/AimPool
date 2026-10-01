@@ -1,7 +1,7 @@
 import { orderedLessons } from '../../content/curriculum';
 import { computeStreak } from '../../progress/stats';
 import type { TableSession } from '../../progress/types';
-import { pct } from '../format';
+import { pct, STATUS_LABEL } from '../format';
 import { useProgress } from '../ProgressContext';
 import { TopBar } from '../components/TopBar';
 
@@ -27,7 +27,7 @@ function SessionBars({ sessions }: { sessions: TableSession[] }) {
 }
 
 export function StatsScreen() {
-  const { attempts, sessions, stats } = useProgress();
+  const { attempts, sessions, stats, status } = useProgress();
   const streak = computeStreak([...attempts.map((a) => a.createdAt), ...sessions.map((s) => s.endedAt)], Date.now());
   const recent = [...sessions].sort((a, b) => a.endedAt - b.endedAt).slice(-10);
   return (
@@ -44,7 +44,7 @@ export function StatsScreen() {
                 <td>{l.title}</td>
                 <td>{pct(s.simRate)} <small>({s.simAttempts})</small></td>
                 <td>{pct(s.tableRate)} <small>({s.tableShots})</small></td>
-                <td>{s.passed ? 'Aprobada' : '—'}</td>
+                <td>{STATUS_LABEL[status(l)]}</td>
               </tr>
             );
           })}

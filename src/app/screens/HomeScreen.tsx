@@ -1,12 +1,16 @@
 import { isUnlocked, orderedLessons } from '../../content/curriculum';
 import { computeStreak } from '../../progress/stats';
 import { useProgress } from '../ProgressContext';
-import { href } from '../routes';
+import { useEffect } from 'react';
+import { href, navigate } from '../routes';
 
 export function HomeScreen() {
   const { ready, persistent, attempts, sessions, passed, settings } = useProgress();
   const streak = computeStreak([...attempts.map((a) => a.createdAt), ...sessions.map((s) => s.endedAt)], Date.now());
   const lessons = orderedLessons();
+  useEffect(() => {
+    if (ready && !settings.onboardingDone) navigate({ name: 'welcome' });
+  }, [ready, settings.onboardingDone]);
   const next = lessons.find((l) => !passed.has(l.id) && isUnlocked(l, passed, settings.ignoreLocks)) ?? lessons[0];
   return (
     <div className="screen home">
