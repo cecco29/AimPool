@@ -8,7 +8,7 @@ export interface Attempt {
   schemaVersion: number;
   lessonId: string;
   exerciseIndex: number;
-  kind: 'estimate' | 'simShot';
+  kind: 'estimate' | 'simShot' | 'predict';
   success: boolean;
   detail?: string;
   createdAt: number;
@@ -32,6 +32,9 @@ export interface Settings {
   sideMouthIn: number;
   ignoreLocks: boolean;
   showGuidesByDefault: boolean;
+  hasTable: 'yes' | 'sometimes' | 'no';
+  onboardingDone: boolean;
+  placement?: { completedAt: number; passed: string[] };
   physicsOverrides?: Partial<PhysicsParams>;
 }
 
@@ -41,6 +44,8 @@ export const DEFAULT_SETTINGS: Settings = {
   sideMouthIn: 5,
   ignoreLocks: false,
   showGuidesByDefault: true,
+  hasTable: 'yes',
+  onboardingDone: false,
 };
 
 export interface ProgressStore {

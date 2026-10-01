@@ -1,7 +1,9 @@
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { DEFAULT_PARAMS, type PhysicsParams } from '../physics/params';
 import { buildTable, type TableGeometry, type TableSpec } from '../table/geometry';
-import { LESSONS, lessonNeeds } from '../content/curriculum';
+import { isUnlocked, LESSONS, lessonNeeds } from '../content/curriculum';
+import { migrateSettings } from '../progress/migrate';
+import { countsAsPassed, lessonStatus, type LessonStatus } from '../progress/status';
 import type { Lesson } from '../content/types';
 import { newId, openProgressStore } from '../progress/store';
 import { lessonStats, type LessonStats } from '../progress/stats';
@@ -19,6 +21,7 @@ export interface ProgressValue {
   geometry: TableGeometry;
   passed: Set<string>;
   stats: (lesson: Lesson) => LessonStats;
+  status: (lesson: Lesson) => LessonStatus;
   recordAttempt: (a: Omit<Attempt, 'id' | 'schemaVersion' | 'createdAt'>) => Promise<void>;
   /** Inserta o actualiza (por id) una sesión en la mesa real. */
   recordSession: (s: Omit<TableSession, 'schemaVersion'>) => Promise<void>;
@@ -39,7 +42,9 @@ export function ProgressProvider({ children, storeFactory = openProgressStore }:
     let alive = true;
     (async () => {
       const s = await storeFactory();
-      const [st, at, se] = await Promise.all([s.getSettings(), s.listAttempts(), s.listTableSessions()]);
+      const [raw, at, se] = await Promise.all([s.getSettings(), s.listAttempts(), s.listTableSessions()]);
+      const st = migrateSettings(raw, at.length + se.length > 0);
+      if (st !== raw) await s.saveSettings(st);
       if (!alive) return;
       setSettings(st);
       setAttempts(at);
@@ -56,7 +61,21 @@ export function ProgressProvider({ children, storeFactory = openProgressStore }:
     (l: Lesson) => lessonStats(l.id, l.passCriteria, attempts, sessions, lessonNeeds(l)),
     [attempts, sessions],
   );
-  const passed = useMemo(() => new Set(LESSONS.filter((l) => stats(l).passed).map((l) => l.id)), [stats]);
+  const statusOf = useCallback(
+    (l: Lesson, unlocked: boolean) => lessonStatus({
+      stats: stats(l), crit: l.passCriteria, needs: lessonNeeds(l), hasTable: settings.hasTable,
+      placementPassed: settings.placement?.passed.includes(l.id) ?? false, unlocked,
+    }),
+    [stats, settings.hasTable, settings.placement],
+  );
+  const passed = useMemo(
+    () => new Set(LESSONS.filter((l) => countsAsPassed(statusOf(l, true), settings.hasTable, lessonNeeds(l))).map((l) => l.id)),
+    [statusOf, settings.hasTable],
+  );
+  const status = useCallback(
+    (l: Lesson) => statusOf(l, isUnlocked(l, passed, settings.ignoreLocks)),
+    [statusOf, passed, settings.ignoreLocks],
+  );
 
   const recordAttempt = useCallback<ProgressValue['recordAttempt']>(async (a) => {
     const full: Attempt = { ...a, id: newId(), schemaVersion: SCHEMA_VERSION, createdAt: Date.now() };
@@ -78,7 +97,7 @@ export function ProgressProvider({ children, storeFactory = openProgressStore }:
 
   const value: ProgressValue = {
     ready: store !== null, persistent: store?.persistent ?? true, settings, attempts, sessions,
-    tableSpec, params, geometry, passed, stats, recordAttempt, recordSession, updateSettings,
+    tableSpec, params, geometry, passed, stats, status, recordAttempt, recordSession, updateSettings,
   };
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
