@@ -106,7 +106,7 @@ Esa posición imaginaria es la bola fantasma. Tu trabajo es mandar el **centro d
     },
     {
       kind: 'predict',
-      prompt: 'Apuntando a la fantasma con fuerza media, ¿hacia dónde sale la blanca después de pegarle a la 1? Tocá un punto de su camino.',
+      prompt: 'Apuntando a la fantasma con fuerza media, ¿hacia dónde sale la blanca después de pegarle a la 1? Tocá un punto de su camino antes de que llegue a una banda.',
       setup: SHOT,
       shot: { aim: { ghostOf: '1', pocket: 'c84' }, power: 0.5 },
       question: 'cueDirection',

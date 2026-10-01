@@ -11,7 +11,7 @@ import { TopBar } from '../components/TopBar';
 import { NotFound } from './LessonScreen';
 
 export function ExerciseScreen({ id, index }: { id: string; index: number }) {
-  const { geometry, params, tableSpec, settings, recordAttempt, recordSession } = useProgress();
+  const { ready, geometry, params, tableSpec, settings, recordAttempt, recordSession } = useProgress();
   const startedAt = useRef(Date.now());
   const sessionId = useRef(newId());
   const lesson = lessonById(id);
@@ -28,12 +28,13 @@ export function ExerciseScreen({ id, index }: { id: string; index: number }) {
   const goNext = () => navigate(nextIndex !== undefined ? { name: 'exercise', id, index: nextIndex } : { name: 'lesson', id });
 
   useEffect(() => {
-    if (hidden) navigate(nextIndex !== undefined ? { name: 'exercise', id, index: nextIndex } : { name: 'lesson', id });
-  }, [hidden, nextIndex, id]);
+    if (ready && hidden) navigate(nextIndex !== undefined ? { name: 'exercise', id, index: nextIndex } : { name: 'lesson', id }, { replace: true });
+  }, [ready, hidden, nextIndex, id]);
 
   const ex = lesson?.exercises[index];
   if (!lesson || !ex) return <NotFound />;
-  if (hidden) return null;
+  // Hasta que cargue la configuración no sabemos si hay mesa: no pintar nada que después haya que ocultar.
+  if (!ready || hidden) return null;
   const env = { geometry, params, tableSpec };
   const optional = ex.kind === 'realTable' && settings.hasTable === 'sometimes';
 

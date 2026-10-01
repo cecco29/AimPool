@@ -37,4 +37,20 @@ describe('evaluatePrediction', () => {
     expect(r.success).toBe(false);
     expect(r.text).toMatch(/no tocó/);
   });
+  test.each([0.5, 1])('cueDirection: any tap on the real path before the first rail is correct (power %s)', async (power) => {
+    const { stateAt } = await import('../physics/simulate');
+    const tl = run([{ id: 'cue', at: { x: 4, y: 1 } }, { id: '1', at: { x: 6, y: 2 } }], { ghostOf: '1', pocket: 'c84' }, power);
+    const hitIdx = tl.events.findIndex((e) => e.kind === 'ballBall');
+    const tHit = tl.events[hitIdx].t;
+    const tRail = tl.events.slice(hitIdx + 1).find((e) => e.ids.includes('cue') && e.kind !== 'transition')?.t ?? tl.duration;
+    for (const f of [0.2, 0.5, 0.8, 0.98]) {
+      const at = stateAt(tl, tHit + f * (tRail - tHit), P).find((b) => b.id === 'cue')!.r;
+      expect(evaluatePrediction('cueDirection', 10, at, tl, g, P).success).toBe(true);
+    }
+  });
+  test('cueDirection: a tap beyond the first rail gets a hint to mark before the rail', async () => {
+    const tl = run([{ id: 'cue', at: { x: 4, y: 1 } }, { id: '1', at: { x: 6, y: 2 } }], { ghostOf: '1', pocket: 'c84' }, 0.5);
+    const end = tl.events.at(-1)!.balls.find((b) => b.id === 'cue')!.r;
+    expect(evaluatePrediction('cueDirection', 10, end, tl, g, P).text).toMatch(/antes de la banda/);
+  });
 });

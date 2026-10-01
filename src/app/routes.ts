@@ -37,8 +37,14 @@ export function href(r: Route): string {
   }
 }
 
-export function navigate(r: Route): void {
-  window.location.hash = href(r);
+/** replace: para redirecciones; no deja una entrada en el historial (si no, "Atrás" vuelve a redirigir). */
+export function navigate(r: Route, opts: { replace?: boolean } = {}): void {
+  if (!opts.replace) {
+    window.location.hash = href(r);
+    return;
+  }
+  window.history.replaceState(window.history.state, '', href(r));
+  window.dispatchEvent(new HashChangeEvent('hashchange'));
 }
 
 export function useRoute(): Route {

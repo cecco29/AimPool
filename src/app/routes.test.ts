@@ -22,3 +22,17 @@ describe('routes', () => {
     expect(parseHash(href(r))).toEqual(r);
   });
 });
+
+import { navigate } from './routes';
+test('redirects replace the history entry instead of pushing one', () => {
+  window.location.hash = '#/map';
+  const before = window.history.length;
+  let fired = 0;
+  const on = () => { fired++; };
+  window.addEventListener('hashchange', on);
+  navigate({ name: 'stats' }, { replace: true });
+  window.removeEventListener('hashchange', on);
+  expect(window.location.hash).toBe('#/stats');
+  expect(window.history.length).toBe(before);
+  expect(fired).toBe(1);
+});

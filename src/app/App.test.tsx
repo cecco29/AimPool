@@ -46,3 +46,29 @@ describe('App', () => {
     expect(await screen.findByText(/No encontramos/)).toBeInTheDocument();
   });
 });
+
+describe('final review regressions (2a)', () => {
+  test('cold deep link to a hidden exercise never paints it while settings load', async () => {
+    window.location.hash = '#/lesson/ghost-ball/ex/5';
+    const slow = async () => {
+      const s = createMemoryStore();
+      await s.saveSettings({ ...DEFAULT_SETTINGS, onboardingDone: true, hasTable: 'no' });
+      await new Promise((r) => setTimeout(r, 30));
+      return s;
+    };
+    render(<App storeFactory={slow} />);
+    expect(screen.queryByTestId('real-hit')).toBeNull();
+    await waitFor(() => expect(window.location.hash).toBe('#/lesson/ghost-ball'));
+  });
+  test('the app still loads if saving the migrated settings fails', async () => {
+    window.location.hash = '#/';
+    const broken = async () => {
+      const s = createMemoryStore();
+      await s.addAttempt({ id: 'x', schemaVersion: 1, lessonId: 'ghost-ball', exerciseIndex: 0, kind: 'simShot', success: true, createdAt: Date.now() });
+      s.saveSettings = async () => { throw new Error('quota'); };
+      return s;
+    };
+    render(<App storeFactory={broken} />);
+    expect(await screen.findByTestId('continue-lesson')).toBeInTheDocument();
+  });
+});

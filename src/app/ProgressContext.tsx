@@ -44,7 +44,13 @@ export function ProgressProvider({ children, storeFactory = openProgressStore }:
       const s = await storeFactory();
       const [raw, at, se] = await Promise.all([s.getSettings(), s.listAttempts(), s.listTableSessions()]);
       const st = migrateSettings(raw, at.length + se.length > 0);
-      if (st !== raw) await s.saveSettings(st);
+      if (st !== raw) {
+        try {
+          await s.saveSettings(st);
+        } catch (err) {
+          console.warn('[progress] no se pudo guardar la migración; sigo con la configuración en memoria', err);
+        }
+      }
       if (!alive) return;
       setSettings(st);
       setAttempts(at);

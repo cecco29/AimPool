@@ -3,6 +3,7 @@ import type { PhysicsParams } from '../physics/params';
 import { add, dot, norm, scale, sub, unit, type Vec3, xy } from '../physics/vec';
 import type { TableGeometry } from '../table/geometry';
 import { finalBalls } from './goals';
+import { stateAt } from '../physics/simulate';
 
 export interface PredictionResult {
   success: boolean;
@@ -31,8 +32,13 @@ export function evaluatePrediction(
   if (hitIdx < 0) return { success: false, text: 'En este tiro la blanca no tocó ninguna bola.' };
   const hit = tl.events[hitIdx];
   const from = hit.balls.find((b) => b.id === 'cue')!.r;
-  const settle = tl.events.slice(hitIdx + 1).find((e) => e.ids[0] === 'cue' && e.kind !== 'ballBall') ?? hit;
-  let v = settle.balls.find((b) => b.id === 'cue')!.v;
+  // Tramo válido: desde el contacto hasta el siguiente choque de la blanca (banda, bola o tronera).
+  const after = tl.events.slice(hitIdx + 1);
+  const rail = after.find((e) => e.ids.includes('cue') && e.kind !== 'transition');
+  const railT = rail?.t ?? tl.duration;
+  const settle = after.find((e) => e.kind === 'transition' && e.ids[0] === 'cue' && e.t < railT);
+  const cueAt = (t: number) => stateAt(tl, t, p).find((b) => b.id === 'cue')!;
+  let v = settle ? settle.balls.find((b) => b.id === 'cue')!.v : cueAt(railT - 1e-6).v;
   if (norm(xy(v)) < 1e-6) v = hit.balls.find((b) => b.id === 'cue')!.v;
   if (norm(xy(v)) < 1e-6) {
     const near = norm(sub(xy(tap), xy(from))) / g.diamond <= 0.3;
@@ -42,6 +48,9 @@ export function evaluatePrediction(
   const actual = add(from, scale(exit, 0.5));
   const mine = unit(xy(sub(tap, from)));
   const err = (Math.acos(Math.max(-1, Math.min(1, dot(exit, mine)))) * 180) / Math.PI;
+  if (rail && err > tolerance) {
+    return { success: false, text: `Le erraste por ${Math.round(err)}°. Ojo: marcá el camino antes de la banda, no después del rebote.`, exitFrom: from, actual };
+  }
   return err <= tolerance
     ? { success: true, text: `¡Muy bien! Le erraste por ${Math.round(err)}°.`, exitFrom: from, actual }
     : { success: false, text: `Le erraste por ${Math.round(err)}°.`, exitFrom: from, actual };

@@ -9,7 +9,7 @@ export function HomeScreen() {
   const streak = computeStreak([...attempts.map((a) => a.createdAt), ...sessions.map((s) => s.endedAt)], Date.now());
   const lessons = orderedLessons();
   useEffect(() => {
-    if (ready && !settings.onboardingDone) navigate({ name: 'welcome' });
+    if (ready && !settings.onboardingDone) navigate({ name: 'welcome' }, { replace: true });
   }, [ready, settings.onboardingDone]);
   const next = lessons.find((l) => !passed.has(l.id) && isUnlocked(l, passed, settings.ignoreLocks)) ?? lessons[0];
   return (
