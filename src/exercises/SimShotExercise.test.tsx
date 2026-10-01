@@ -42,3 +42,18 @@ test('pulling back the power cue and releasing shoots', async () => {
   expect(await screen.findByTestId('shot-result')).toBeInTheDocument();
   expect(onAttempt).toHaveBeenCalledTimes(1);
 });
+
+test('leaving during "Calculando…" does not record an attempt', async () => {
+  const onAttempt = vi.fn();
+  const ex: Extract<Exercise, { kind: 'simShot' }> = {
+    kind: 'simShot', prompt: 'p', attempts: 1,
+    setup: { balls: [{ id: 'cue', at: { x: 4, y: 1 } }, { id: '1', at: { x: 6, y: 2 } }] },
+    goal: { pocketBall: { ball: '1', pocket: 'c84' } },
+    showGuides: { aimLine: true, ghostBall: false, contactPreview: false },
+  };
+  const { unmount } = render(<SimShotExercise exercise={ex} env={env} onAttempt={onAttempt} onContinue={() => {}} />);
+  fireEvent.click(screen.getByTestId('shoot'));
+  unmount();
+  await new Promise((r) => setTimeout(r, 50));
+  expect(onAttempt).not.toHaveBeenCalled();
+});

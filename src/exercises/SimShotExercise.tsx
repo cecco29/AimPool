@@ -37,6 +37,11 @@ export function SimShotExercise({ exercise, env, onAttempt, onContinue }: {
   const playback = usePlayback(timeline, env.params);
   const [charge, setCharge] = useState<number | null>(null);
   const lastDrag = useRef<Vec3 | null>(null);
+  const alive = useRef(true);
+  useEffect(() => {
+    alive.current = true;
+    return () => { alive.current = false; };
+  }, []);
 
   useEffect(() => {
     const c = initial.find((b) => b.id === 'cue')!;
@@ -64,6 +69,7 @@ export function SimShotExercise({ exercise, env, onAttempt, onContinue }: {
     setError(null);
     try {
       const tl = await simulateAsync(initial, aimToShot({ ...aim, power }), env.tableSpec, env.params);
+      if (!alive.current) return;
       const res = evaluateGoal(exercise.goal, tl, env.geometry, env.params);
       setResult(res);
       setResults((r) => [...r, res.success]);
@@ -71,9 +77,9 @@ export function SimShotExercise({ exercise, env, onAttempt, onContinue }: {
       onAttempt(res.success, res.messages.join(' '));
     } catch (err) {
       console.error('[SimShotExercise]', err);
-      setError('No se pudo simular el tiro. Probá de nuevo.');
+      if (alive.current) setError('No se pudo simular el tiro. Probá de nuevo.');
     } finally {
-      setBusy(false);
+      if (alive.current) setBusy(false);
     }
   };
 

@@ -13,13 +13,20 @@ export function runRequest(req: Omit<SimRequest, 'id'>): Timeline {
 }
 
 let worker: Worker | null = null;
+let workerBroken = false;
 let nextId = 1;
-const pending = new Map<number, { resolve: (t: Timeline) => void; reject: (e: Error) => void }>();
+const pending = new Map<number, { resolve: (t: Timeline) => void; reject: (e: Error) => void; req: Omit<SimRequest, 'id'> }>();
 
 function getWorker(): Worker | null {
-  if (typeof Worker === 'undefined') return null;
+  if (workerBroken || typeof Worker === 'undefined') return null;
   if (!worker) {
-    worker = new Worker(new URL('./worker.ts', import.meta.url), { type: 'module' });
+    try {
+      worker = new Worker(new URL('./worker.ts', import.meta.url), { type: 'module' });
+    } catch (err) {
+      console.warn('[sim] no hay worker; simulo en el hilo principal', err);
+      workerBroken = true;
+      return null;
+    }
     worker.onmessage = (e: MessageEvent<SimResponse>) => {
       const job = pending.get(e.data.id);
       if (!job) return;
@@ -28,10 +35,18 @@ function getWorker(): Worker | null {
       else job.reject(new Error(e.data.error));
     };
     worker.onerror = (e) => {
-      for (const job of pending.values()) job.reject(new Error(e.message || 'Error en el worker de simulación'));
-      pending.clear();
+      console.warn('[sim] el worker falló; sigo en el hilo principal:', e.message);
+      workerBroken = true;
       worker?.terminate();
       worker = null;
+      for (const [id, job] of pending) {
+        pending.delete(id);
+        try {
+          job.resolve(runRequest(job.req));
+        } catch (err) {
+          job.reject(err instanceof Error ? err : new Error(String(err)));
+        }
+      }
     };
   }
   return worker;
@@ -42,7 +57,7 @@ export function simulateAsync(balls: Ball[], shot: Shot, table: TableSpec, param
   if (!w) return Promise.resolve().then(() => runRequest({ balls, shot, table, params }));
   const id = nextId++;
   return new Promise((resolve, reject) => {
-    pending.set(id, { resolve, reject });
+    pending.set(id, { resolve, reject, req: { balls, shot, table, params } });
     w.postMessage({ id, balls, shot, table, params } satisfies SimRequest);
   });
 }
