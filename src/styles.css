@@ -94,3 +94,9 @@ figcaption, caption { color: var(--muted); font-size: 0.85rem; padding: 6px 0; c
 .fine-wheel-value { position: absolute; right: 8px; background: var(--bg); padding: 2px 8px; border-radius: 8px; font-variant-numeric: tabular-nums; font-size: 0.85rem; z-index: 1; }
 .hint { color: var(--muted); font-size: 0.85rem; margin: 0; }
 .shoot-small { width: 100%; }
+.theory-image img { width: 100%; height: auto; border-radius: 12px; display: block; background: var(--surface); }
+.image-fallback { padding: 24px 12px; border-radius: 12px; background: var(--surface); color: var(--muted); text-align: center; margin: 0; }
+.demo { display: grid; gap: 8px; }
+.demo-spin { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.demo-spin .row button { padding: 6px 10px; font-size: 0.85rem; }
+.demo-spin button[aria-pressed='true'] { border-color: var(--accent); }

@@ -16,7 +16,7 @@ export function NotFound() {
 }
 
 export function LessonScreen({ id }: { id: string }) {
-  const { geometry, params, stats, passed, settings } = useProgress();
+  const { geometry, params, tableSpec, stats, passed, settings } = useProgress();
   const lesson = lessonById(id);
   if (!lesson) return <NotFound />;
   const unlocked = isUnlocked(lesson, passed, settings.ignoreLocks);
@@ -35,7 +35,7 @@ export function LessonScreen({ id }: { id: string }) {
       </div>
       {lesson.theory.map((block, i) => (
         <motion.div key={i} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25, delay: i * 0.05 }}>
-          <TheoryBlockView block={block} geometry={geometry} R={params.R} showGuides={settings.showGuidesByDefault} />
+          <TheoryBlockView block={block} geometry={geometry} params={params} tableSpec={tableSpec} showGuides={settings.showGuidesByDefault} />
         </motion.div>
       ))}
       {lesson.reliability && <p className="muted">{lesson.reliability.note}</p>}
