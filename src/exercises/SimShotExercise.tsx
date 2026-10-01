@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Exercise } from '../content/types';
 import { applyVariation, layoutToBalls } from '../content/layout';
 import { evaluateGoal, type GoalResult } from '../content/goals';
@@ -9,7 +9,8 @@ import { firstContact, ghostGuides, type GuideDraw } from '../render/guides';
 import { usePlayback } from '../render/usePlayback';
 import { JumpPanel } from '../render/JumpPanel';
 import { AimControls } from '../input/AimControls';
-import { type AimState, aimToShot, DEFAULT_AIM } from '../input/aim';
+import { PowerCue } from '../input/PowerCue';
+import { type AimState, aimToShot, DEFAULT_AIM, powerLabel, relativeAimDelta } from '../input/aim';
 import { simulateAsync } from '../sim/client';
 import { azimuthTo } from '../table/aim';
 import type { ExerciseEnv } from './env';
@@ -34,6 +35,8 @@ export function SimShotExercise({ exercise, env, onAttempt, onContinue }: {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const playback = usePlayback(timeline, env.params);
+  const [charge, setCharge] = useState<number | null>(null);
+  const lastDrag = useRef<Vec3 | null>(null);
 
   useEffect(() => {
     const c = initial.find((b) => b.id === 'cue')!;
@@ -50,15 +53,17 @@ export function SimShotExercise({ exercise, env, onAttempt, onContinue }: {
     const contact = firstContact(cue, aim.azimuth, initial, env.geometry.length, env.geometry.width, R);
     if (exercise.showGuides.aimLine) out.push({ kind: 'line', from: cue.r, to: contact.point, color: 'rgba(255,209,102,0.85)' });
     if (exercise.showGuides.contactPreview && contact.ballId) out.push({ kind: 'ghost', at: contact.point, color: 'rgba(255,209,102,0.9)' });
-    out.push({ kind: 'cue', at: cue.r, azimuth: aim.azimuth });
+    out.push({ kind: 'cue', at: cue.r, azimuth: aim.azimuth, pull: charge ?? 0 });
     return out;
-  }, [aiming, initial, targetId, pocket, exercise.showGuides, cue, aim.azimuth, env.geometry, R]);
+  }, [aiming, initial, targetId, pocket, exercise.showGuides, cue, aim.azimuth, env.geometry, R, charge]);
 
-  const shoot = async () => {
+  const shoot = async (power = aim.power) => {
+    setCharge(null);
+    setAim((a) => ({ ...a, power }));
     setBusy(true);
     setError(null);
     try {
-      const tl = await simulateAsync(initial, aimToShot(aim), env.tableSpec, env.params);
+      const tl = await simulateAsync(initial, aimToShot({ ...aim, power }), env.tableSpec, env.params);
       const res = evaluateGoal(exercise.goal, tl, env.geometry, env.params);
       setResult(res);
       setResults((r) => [...r, res.success]);
@@ -77,7 +82,15 @@ export function SimShotExercise({ exercise, env, onAttempt, onContinue }: {
     setResult(null);
     setRound((r) => r + 1);
   };
-  const onPointer = (p: Vec3) => setAim((a) => ({ ...a, azimuth: azimuthTo(cue.r, p) }));
+  // Arrastre relativo: el taco gira según el movimiento de costado del dedo, sin saltar a donde está el dedo.
+  const onPointer = (p: Vec3, phase: 'down' | 'move' | 'up') => {
+    if (phase === 'down') lastDrag.current = p;
+    else if (phase === 'move' && lastDrag.current) {
+      const from = lastDrag.current;
+      lastDrag.current = p;
+      setAim((a) => ({ ...a, azimuth: a.azimuth + relativeAimDelta(a.azimuth, from, p) }));
+    } else lastDrag.current = null;
+  };
   const hits = results.filter(Boolean).length;
   const shotNumber = Math.min(results.length + (timeline ? 0 : 1), exercise.attempts);
 
@@ -85,14 +98,18 @@ export function SimShotExercise({ exercise, env, onAttempt, onContinue }: {
     <section className="exercise">
       <p className="prompt">{exercise.prompt}</p>
       <p className="counter">Tiro {shotNumber} de {exercise.attempts} · {hits} adentro</p>
-      <TableCanvas geometry={env.geometry} balls={playback.balls ?? initial} R={R} guides={guides}
-        onPointer={aiming ? onPointer : undefined} label="Mesa: arrastrá para apuntar" />
+      <div className="table-row">
+        <TableCanvas geometry={env.geometry} balls={playback.balls ?? initial} R={R} guides={guides}
+          onPointer={aiming ? onPointer : undefined} label="Mesa: arrastrá de costado para girar el taco" />
+        <PowerCue disabled={!aiming} onPowerChange={setCharge} onShoot={(p) => { void shoot(p); }} onCancel={() => setCharge(null)} />
+      </div>
+      {aiming && <p className="hint">Arrastrá de costado sobre la mesa para girar el taco · tirá del taco hacia abajo y soltá para tirar.</p>}
       {timeline && <JumpPanel timeline={timeline} ballId="cue" p={env.params} />}
       {error && <p className="warn" role="alert">{error}</p>}
       {aiming && (
         <>
           <AimControls aim={aim} onChange={setAim} />
-          <button type="button" className="primary big" onClick={shoot} data-testid="shoot">Tirar</button>
+          <button type="button" className="shoot-small" onClick={() => { void shoot(); }} data-testid="shoot">Tirar con la última fuerza ({powerLabel(aim.power)})</button>
         </>
       )}
       {busy && <p className="muted">Calculando el tiro…</p>}

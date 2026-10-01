@@ -81,3 +81,16 @@ figcaption, caption { color: var(--muted); font-size: 0.85rem; padding: 6px 0; c
 .sources { padding-left: 18px; font-size: 0.9rem; margin: 0; }
 .update-banner { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(16px + env(safe-area-inset-bottom)); background: var(--surface-2); border: 1px solid var(--accent); padding: 10px 12px; border-radius: 12px; display: flex; gap: 10px; align-items: center; z-index: 10; max-width: calc(100% - 32px); }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+.table-row { display: flex; gap: 8px; align-items: stretch; }
+.table-row .table-wrap { flex: 1; min-width: 0; }
+.power-cue { position: relative; width: 52px; flex: none; border-radius: 14px; background: var(--surface); border: 1px solid var(--border); overflow: hidden; touch-action: none; cursor: grab; user-select: none; }
+.power-cue.disabled { opacity: 0.4; }
+.power-fill { position: absolute; left: 0; right: 0; top: 0; background: linear-gradient(#3ccf8e, #ffd166 60%, #ff6b6b); opacity: 0.35; }
+.power-stick { position: absolute; left: 50%; top: 6%; width: 10px; height: 70%; margin-left: -5px; border-radius: 5px; background: linear-gradient(#2c6fb5 0 6%, #d9b07a 6%); }
+.power-label { position: absolute; left: 0; right: 0; bottom: 8px; text-align: center; font-size: 0.75rem; color: var(--muted); }
+.fine-wheel { position: relative; height: 44px; border-radius: 12px; border: 1px solid var(--border); touch-action: none; cursor: ew-resize; user-select: none;
+  background: var(--surface-2) repeating-linear-gradient(90deg, rgba(255,255,255,0.28) 0 2px, transparent 2px 10px); display: flex; align-items: center; justify-content: center; }
+.fine-wheel::after { content: ''; position: absolute; top: 4px; bottom: 4px; left: 50%; width: 2px; background: var(--accent); }
+.fine-wheel-value { position: absolute; right: 8px; background: var(--bg); padding: 2px 8px; border-radius: 8px; font-variant-numeric: tabular-nums; font-size: 0.85rem; z-index: 1; }
+.hint { color: var(--muted); font-size: 0.85rem; margin: 0; }
+.shoot-small { width: 100%; }

@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import { simulate } from '../physics/simulate';
 import { DEFAULT_PARAMS as P } from '../physics/params';
-import { aimToShot, clampSpin, DEFAULT_AIM, MAX_SPIN, powerLabel, powerToCueSpeed, spinFromPoint } from './aim';
+import { aimToShot, clampSpin, DEFAULT_AIM, MAX_SPIN, powerLabel, powerToCueSpeed, pullToPower, relativeAimDelta, spinFromPoint, wheelDelta } from './aim';
 
 describe('aim helpers', () => {
   test('clampSpin keeps the point inside the allowed radius', () => {
@@ -32,5 +32,19 @@ describe('aim helpers', () => {
     const s = aimToShot({ ...DEFAULT_AIM, elevation: 30 });
     expect(s.elevation).toBeCloseTo(Math.PI / 6, 12);
     expect(s.cueBallId).toBe('cue');
+  });
+  test('relative drag: only the finger motion perpendicular to the aim line rotates the cue', () => {
+    expect(relativeAimDelta(0, [1, 1, 0], [1, 1.1, 0])).toBeCloseTo(0.1, 12); // a la izquierda del tiro → antihorario
+    expect(relativeAimDelta(0, [1, 1, 0], [1.3, 1, 0])).toBeCloseTo(0, 12); // a lo largo del tiro → nada
+    expect(relativeAimDelta(Math.PI / 2, [1, 1, 0], [0.9, 1, 0])).toBeCloseTo(0.1, 12);
+  });
+  test('fine wheel: 50 px = 1°', () => {
+    expect(wheelDelta(50)).toBeCloseTo(Math.PI / 180, 12);
+    expect(wheelDelta(-25)).toBeCloseTo(-Math.PI / 360, 12);
+  });
+  test('pullToPower clamps to [0, 1]', () => {
+    expect(pullToPower(110, 220)).toBeCloseTo(0.5, 12);
+    expect(pullToPower(-30, 220)).toBe(0);
+    expect(pullToPower(500, 220)).toBe(1);
   });
 });

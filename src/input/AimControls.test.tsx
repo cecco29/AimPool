@@ -4,17 +4,15 @@ import { AimControls } from './AimControls';
 import { DEFAULT_AIM } from './aim';
 
 describe('AimControls', () => {
-  test('fine tune rotates by 0.1°', () => {
+  test('the fine wheel rotates the aim (keyboard: 0.1° per arrow)', () => {
     const onChange = vi.fn();
     render(<AimControls aim={DEFAULT_AIM} onChange={onChange} />);
-    fireEvent.click(screen.getByTestId('fine-right'));
+    fireEvent.keyDown(screen.getByTestId('fine-wheel'), { key: 'ArrowRight' });
     expect(onChange.mock.calls[0][0].azimuth).toBeCloseTo((0.1 * Math.PI) / 180, 12);
   });
-  test('power slider updates power', () => {
-    const onChange = vi.fn();
-    render(<AimControls aim={DEFAULT_AIM} onChange={onChange} />);
-    fireEvent.change(screen.getByLabelText('Fuerza'), { target: { value: '0.8' } });
-    expect(onChange.mock.calls[0][0].power).toBe(0.8);
+  test('power is no longer a slider here (it moved to the cue)', () => {
+    render(<AimControls aim={DEFAULT_AIM} onChange={() => {}} />);
+    expect(screen.queryByLabelText('Fuerza')).toBeNull();
   });
   test('warns about miscue outside the red circle', () => {
     render(<AimControls aim={{ ...DEFAULT_AIM, a: 0.55 }} onChange={() => {}} />);

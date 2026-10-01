@@ -5,7 +5,7 @@ import { ghostBallPosition } from '../table/aim';
 export type GuideDraw =
   | { kind: 'line'; from: Vec3; to: Vec3; dashed?: boolean; color?: string }
   | { kind: 'ghost'; at: Vec3; color?: string }
-  | { kind: 'cue'; at: Vec3; azimuth: number };
+  | { kind: 'cue'; at: Vec3; azimuth: number; pull?: number };
 
 /** Recorre en línea recta desde la blanca: primer contacto con una bola (a 2R) o con la banda. */
 export function firstContact(

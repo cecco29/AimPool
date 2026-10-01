@@ -169,9 +169,10 @@ function drawGuide(ctx: Ctx, vp: Viewport, gd: GuideDraw, R: number) {
     const dir: Vec3 = [Math.cos(gd.azimuth), Math.sin(gd.azimuth), 0];
     const at = (dist: number): [number, number] =>
       worldToScreen(vp, [gd.at[0] - dir[0] * dist, gd.at[1] - dir[1] * dist, 0]);
-    const [tx, ty] = at(R * 1.6);
-    const [jx, jy] = at(R * 1.6 + 0.015);
-    const [bx, by] = at(R * 1.6 + 1.3);
+    const back = R * 1.6 + (gd.pull ?? 0) * 0.18; // el taco retrocede al cargar la fuerza
+    const [tx, ty] = at(back);
+    const [jx, jy] = at(back + 0.015);
+    const [bx, by] = at(back + 1.3);
     ctx.lineCap = 'round';
     ctx.strokeStyle = COLORS.cue;
     ctx.lineWidth = Math.max(3, R * 0.45 * vp.scale);

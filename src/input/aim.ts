@@ -1,4 +1,5 @@
 import type { Shot } from '../physics/types';
+import type { Vec3 } from '../physics/vec';
 
 export interface AimState {
   azimuth: number; // rad
@@ -37,3 +38,21 @@ export const aimToShot = (aim: AimState, cueBallId = 'cue'): Shot => ({
   b: aim.b,
   cueSpeed: powerToCueSpeed(aim.power),
 });
+
+/** Ganancia del arrastre relativo: rad de giro por metro de mesa recorrido de costado (~0,25°/px en un celu). */
+export const DRAG_GAIN = 1;
+/** Rueda de ajuste fino: grados por píxel. */
+export const WHEEL_DEG_PER_PX = 0.02;
+/** Por debajo de esta carga, soltar el taco cancela el tiro. */
+export const POWER_CANCEL = 0.03;
+
+/** Giro relativo: solo cuenta el desplazamiento del dedo perpendicular a la línea de tiro (+ = antihorario). */
+export function relativeAimDelta(azimuth: number, from: Vec3, to: Vec3, gain = DRAG_GAIN): number {
+  const px = -Math.sin(azimuth);
+  const py = Math.cos(azimuth);
+  return ((to[0] - from[0]) * px + (to[1] - from[1]) * py) * gain;
+}
+
+export const wheelDelta = (dxPx: number): number => (dxPx * WHEEL_DEG_PER_PX * Math.PI) / 180;
+
+export const pullToPower = (pullPx: number, travelPx: number): number => Math.min(1, Math.max(0, pullPx / travelPx));
