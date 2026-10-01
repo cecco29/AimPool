@@ -13,7 +13,7 @@ describe('AimControls', () => {
   test('power slider updates power', () => {
     const onChange = vi.fn();
     render(<AimControls aim={DEFAULT_AIM} onChange={onChange} />);
-    fireEvent.change(screen.getByRole('slider', { name: 'Fuerza' }), { target: { value: '0.8' } });
+    fireEvent.change(screen.getByLabelText('Fuerza'), { target: { value: '0.8' } });
     expect(onChange.mock.calls[0][0].power).toBe(0.8);
   });
   test('warns about miscue outside the red circle', () => {
