@@ -9,6 +9,7 @@ import { LessonScreen } from './screens/LessonScreen';
 import { ExerciseScreen } from './screens/ExerciseScreen';
 import { StatsScreen } from './screens/StatsScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
+import { UpdateBanner } from './UpdateBanner';
 
 function renderRoute(r: Route) {
   switch (r.name) {
@@ -39,6 +40,7 @@ export function App({ storeFactory }: { storeFactory?: () => Promise<ProgressSto
   return (
     <ProgressProvider storeFactory={storeFactory}>
       <Shell />
+      <UpdateBanner />
     </ProgressProvider>
   );
 }
