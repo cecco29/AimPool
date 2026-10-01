@@ -25,6 +25,13 @@ Esa posición imaginaria es la bola fantasma. Tu trabajo es mandar el **centro d
       caption: 'La bola fantasma (círculo punteado) queda a una bola de distancia de la 1, sobre la línea a la tronera.',
     },
     {
+      kind: 'demo',
+      setup: SHOT,
+      shot: { aim: { ghostOf: '1', pocket: 'c84' }, power: 0.5 },
+      trace: ['cue', '1'],
+      caption: 'Así se ve: la blanca va al centro de la fantasma y la 1 sale derecho a la tronera. Tocá “Repetir” para verlo otra vez.',
+    },
+    {
       kind: 'text',
       md: `**Cómo aplicarlo en la mesa:**
 
@@ -96,6 +103,15 @@ Esa posición imaginaria es la bola fantasma. Tu trabajo es mandar el **centro d
       goal: { pocketBall: { ball: '1', pocket: 'c84' } },
       attempts: 8,
       showGuides: { aimLine: true, ghostBall: false, contactPreview: false },
+    },
+    {
+      kind: 'predict',
+      prompt: 'Apuntando a la fantasma con fuerza media, ¿hacia dónde sale la blanca después de pegarle a la 1? Tocá un punto de su camino.',
+      setup: SHOT,
+      shot: { aim: { ghostOf: '1', pocket: 'c84' }, power: 0.5 },
+      question: 'cueDirection',
+      tolerance: 12,
+      explanation: 'Si la blanca llega seca (sin rotación), sale a 90° de la bola objetivo: es la regla de los 90°. Si llega rodando, se abre un poco menos (regla de los 30°). Lo vas a ver en Control de blanca.',
     },
     {
       kind: 'realTable',

@@ -19,7 +19,9 @@ export interface ShotSpec {
 export type TheoryBlock =
   | { kind: 'text'; md: string }
   | { kind: 'diagram'; setup: BallLayout; target?: TargetSpec; showGhost?: boolean; caption: string }
-  | { kind: 'table'; headers: string[]; rows: string[][]; caption?: string };
+  | { kind: 'table'; headers: string[]; rows: string[][]; caption?: string }
+  | { kind: 'image'; src: string; alt: string; caption: string; credit?: { author: string; license: string; url: string } }
+  | { kind: 'demo'; setup: BallLayout; shot: ShotSpec; caption: string; trace?: string[]; interactive?: 'spin' };
 
 export type EstimateAnswer =
   | { kind: 'choice'; options: string[]; correct: number }
@@ -36,7 +38,8 @@ export interface VariationSpec { balls: string[]; jitter: number } // jitter en 
 export type Exercise =
   | { kind: 'estimate'; prompt: string; setup: BallLayout; answer: EstimateAnswer; explanation: string; target?: TargetSpec }
   | { kind: 'simShot'; prompt: string; setup: BallLayout; variation?: VariationSpec; goal: ShotGoal; attempts: number; showGuides: GuideFlags }
-  | { kind: 'realTable'; setup: BallLayout; shots: number; instructions: string; diagnose: boolean; target?: TargetSpec };
+  | { kind: 'realTable'; setup: BallLayout; shots: number; instructions: string; diagnose: boolean; target?: TargetSpec }
+  | { kind: 'predict'; prompt: string; setup: BallLayout; shot: ShotSpec; question: 'cueStop' | 'cueDirection'; tolerance: number; explanation: string };
 
 export interface Lesson {
   id: string;

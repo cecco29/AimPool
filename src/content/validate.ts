@@ -1,7 +1,8 @@
 import { DEFAULT_PARAMS } from '../physics/params';
 import { buildTable, DEFAULT_TABLE_SPEC, type TableSize } from '../table/geometry';
 import { layoutToBalls } from './layout';
-import type { BallLayout, Exercise, Lesson } from './types';
+import type { BallLayout, Exercise, Lesson, ShotSpec } from './types';
+import type { PlacementItem } from './placement';
 
 const SIZES: TableSize[] = ['7ft', '8ft', '9ft'];
 
@@ -24,6 +25,11 @@ function checkLayout(where: string, layout: BallLayout, needCue: boolean, errors
   }
 }
 
+function checkShot(where: string, shot: ShotSpec, ids: Set<string>, errors: string[]) {
+  if ('ghostOf' in shot.aim && !ids.has(shot.aim.ghostOf)) errors.push(`${where}: bola ${shot.aim.ghostOf} no está en el setup`);
+  if (shot.power < 0 || shot.power > 1) errors.push(`${where}: power fuera de [0,1]`);
+}
+
 function checkExercise(where: string, ex: Exercise, errors: string[]) {
   checkLayout(where, ex.setup, true, errors);
   const ids = new Set(ex.setup.balls.map((b) => b.id));
@@ -39,12 +45,16 @@ function checkExercise(where: string, ex: Exercise, errors: string[]) {
     for (const id of ex.variation?.balls ?? []) if (!ids.has(id)) errors.push(`${where}: variación sobre bola ${id} inexistente`);
   }
   if (ex.kind === 'realTable' && ex.shots < 1) errors.push(`${where}: shots debe ser ≥ 1`);
+  if (ex.kind === 'predict') {
+    checkShot(where, ex.shot, ids, errors);
+    if (!(ex.tolerance > 0)) errors.push(`${where}: tolerance debe ser > 0`);
+  }
   if ((ex.kind === 'realTable' || ex.kind === 'estimate') && ex.target && !ids.has(ex.target.ball)) {
     errors.push(`${where}: bola ${ex.target.ball} no está en el setup`);
   }
 }
 
-export function validateCurriculum(lessons: Lesson[]): string[] {
+export function validateCurriculum(lessons: Lesson[], placement: PlacementItem[] = []): string[] {
   const errors: string[] = [];
   const ids = lessons.map((l) => l.id);
   for (const id of new Set(ids)) if (ids.indexOf(id) !== ids.lastIndexOf(id)) errors.push(`id de lección duplicado: ${id}`);
@@ -56,10 +66,27 @@ export function validateCurriculum(lessons: Lesson[]): string[] {
     const { simulator, realTable } = l.passCriteria;
     if (simulator < 0 || simulator > 1 || realTable < 0 || realTable > 1) errors.push(`${l.id}: passCriteria fuera de [0,1]`);
     l.theory.forEach((t, i) => {
-      if (t.kind === 'diagram') checkLayout(`${l.id} teoría ${i}`, t.setup, false, errors);
+      const where = `${l.id} teoría ${i}`;
+      if (t.kind === 'diagram') checkLayout(where, t.setup, false, errors);
+      if (t.kind === 'image') {
+        if (!t.src.startsWith('illustrations/')) errors.push(`${where}: la imagen debe estar en illustrations/`);
+        if (!t.alt.trim()) errors.push(`${where}: falta el texto alt de la imagen`);
+      }
+      if (t.kind === 'demo') {
+        checkLayout(where, t.setup, true, errors);
+        checkShot(where, t.shot, new Set(t.setup.balls.map((b) => b.id)), errors);
+      }
     });
     l.exercises.forEach((ex, i) => checkExercise(`${l.id} ejercicio ${i}`, ex, errors));
   }
+
+  const perLesson = new Map<string, number>();
+  placement.forEach((it, i) => {
+    if (!byId.has(it.lessonId)) errors.push(`ubicación ${i}: lección inexistente ${it.lessonId}`);
+    perLesson.set(it.lessonId, (perLesson.get(it.lessonId) ?? 0) + 1);
+    checkExercise(`ubicación ${i}`, it.exercise, errors);
+  });
+  for (const [id, n] of perLesson) if (n < 2) errors.push(`ubicación: la lección ${id} necesita al menos 2 ítems`);
 
   const state = new Map<string, 'visiting' | 'done'>();
   const visit = (id: string): boolean => {
