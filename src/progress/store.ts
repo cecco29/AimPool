@@ -11,7 +11,11 @@ export function createMemoryStore(): ProgressStore {
     persistent: false,
     async addAttempt(a) { attempts.push(a); },
     async listAttempts() { return attempts.slice(); },
-    async addTableSession(s) { sessions.push(s); },
+    async addTableSession(s) {
+      const i = sessions.findIndex((x) => x.id === s.id);
+      if (i >= 0) sessions[i] = s;
+      else sessions.push(s);
+    },
     async listTableSessions() { return sessions.slice(); },
     async getSettings() { return { ...settings }; },
     async saveSettings(s) { settings = { ...s }; },

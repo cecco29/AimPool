@@ -1,10 +1,12 @@
 import type { Ball } from './types';
 import { ballBallFriction, type PhysicsParams } from './params';
-import { add, cross, dot, norm, scale, sub, unit } from './vec';
+import { add, cross, dot, norm, scale, sub, unit, xy } from './vec';
 
 /** Choque instantáneo inelástico con fricción entre bolas de igual masa (§4.1). */
 export function resolveBallBall(b1: Ball, b2: Ball, p: PhysicsParams): [Ball, Ball] {
-  const n = unit(sub(b2.r, b1.r));
+  // Sobre el paño el choque es plano: sin esto la fricción con efecto vertical hunde una bola en la pizarra.
+  const planar = b1.motion !== 'airborne' && b2.motion !== 'airborne';
+  const n = unit(planar ? xy(sub(b2.r, b1.r)) : sub(b2.r, b1.r));
   const e = p.eBall;
   const v1n = dot(b1.v, n);
   const v2n = dot(b2.v, n);
@@ -19,7 +21,8 @@ export function resolveBallBall(b1: Ball, b2: Ball, p: PhysicsParams): [Ball, Ba
 
   // Velocidad relativa de los puntos de contacto (bola 1 en +R n̂, bola 2 en −R n̂), parte tangencial.
   const u = sub(add(b1.v, scale(cross(b1.w, n), p.R)), sub(b2.v, scale(cross(b2.w, n), p.R)));
-  const ut = sub(u, scale(n, dot(u, n)));
+  const ut3 = sub(u, scale(n, dot(u, n)));
+  const ut = planar ? xy(ut3) : ut3;
   const s = norm(ut);
   if (s > 1e-12) {
     const mag = Math.min(ballBallFriction(p, s) * jn, s / 7);

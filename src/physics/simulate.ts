@@ -10,6 +10,11 @@ import { sub, unit, xy, ZERO } from './vec';
 export interface SimOptions { maxEvents?: number; maxDuration?: number }
 const MAX_ZERO_DT_EVENTS = 100;
 
+/** Una bola sobre el paño no puede tener velocidad hacia abajo: se apoya en la pizarra. */
+function onSlate(b: Ball, p: PhysicsParams): Ball {
+  return b.r[2] <= p.R + 1e-9 && b.v[2] < 0 ? { ...b, r: [b.r[0], b.r[1], p.R], v: [b.v[0], b.v[1], 0] } : b;
+}
+
 function resolveEvent(ev: Candidate, balls: Ball[], boundary: Boundary, p: PhysicsParams): Ball[] {
   const out = balls.slice();
   const i = out.findIndex((b) => b.id === ev.ids[0]);
@@ -21,18 +26,18 @@ function resolveEvent(ev: Candidate, balls: Ball[], boundary: Boundary, p: Physi
     case 'ballBall': {
       const j = out.findIndex((x) => x.id === ev.ids[1]);
       const [r1, r2] = resolveBallBall(b, out[j], p);
-      out[i] = withMotion(r1, p);
-      out[j] = withMotion(r2, p);
+      out[i] = withMotion(onSlate(r1, p), p);
+      out[j] = withMotion(onSlate(r2, p), p);
       break;
     }
     case 'cushion': {
       const s = boundary.segments.find((x) => x.id === ev.target)!;
-      out[i] = withMotion(resolveCushion(b, s.n, p), p);
+      out[i] = withMotion(onSlate(resolveCushion(b, s.n, p), p), p);
       break;
     }
     case 'jaw': {
       const c = boundary.jaws.find((x) => x.id === ev.target)!;
-      out[i] = withMotion(resolveCushion(b, unit(xy(sub(b.r, c.c))), p), p);
+      out[i] = withMotion(onSlate(resolveCushion(b, unit(xy(sub(b.r, c.c))), p), p), p);
       break;
     }
     case 'pocket':

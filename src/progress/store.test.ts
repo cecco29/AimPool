@@ -27,6 +27,15 @@ describe.each([
     await s.addTableSession({ id: newId(), schemaVersion: SCHEMA_VERSION, lessonId: 'x', exerciseIndex: 2, shots: [{ success: true }, { success: false, miss: 'fina' }], startedAt: 1, endedAt: 2 });
     expect((await s.listTableSessions())[0].shots[1].miss).toBe('fina');
   });
+  test('adding a table session with the same id replaces it (upsert)', async () => {
+    const s = await make();
+    const base = { id: 'fixed', schemaVersion: SCHEMA_VERSION, lessonId: 'x', exerciseIndex: 0, startedAt: 1, endedAt: 2 };
+    await s.addTableSession({ ...base, shots: [{ success: true }] });
+    await s.addTableSession({ ...base, shots: [{ success: true }, { success: false }] });
+    const all = await s.listTableSessions();
+    expect(all).toHaveLength(1);
+    expect(all[0].shots).toHaveLength(2);
+  });
   test('settings default and save', async () => {
     const s = await make();
     expect(await s.getSettings()).toEqual(DEFAULT_SETTINGS);

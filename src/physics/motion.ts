@@ -21,7 +21,12 @@ export function classify(b: Ball, p: PhysicsParams): Motion {
   return 'stationary';
 }
 
-export const withMotion = (b: Ball, p: PhysicsParams): Ball => ({ ...b, motion: classify(b, p) });
+export function withMotion(b: Ball, p: PhysicsParams): Ball {
+  const motion = classify(b, p);
+  // Una bola quieta (o girando en el lugar) no arrastra residuos de velocidad en el plano.
+  if (motion === 'stationary' || motion === 'spinning') return { ...b, v: [0, 0, b.v[2]], motion };
+  return { ...b, motion };
+}
 
 /** r(t) = a t² + b t + c, válido hasta la próxima transición de la bola. */
 export interface Quad { a: Vec3; b: Vec3; c: Vec3 }

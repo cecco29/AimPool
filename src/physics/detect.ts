@@ -6,6 +6,8 @@ import { add, dot, scale, sub, type Vec3, xy } from './vec';
 
 export const T_EPS = 1e-10;
 const TOUCH_EPS = 1e-9;
+/** Velocidad mínima de acercamiento para aceptar un contacto en t = 0 (evita bucles de choques rasantes). */
+const MIN_APPROACH = 1e-7;
 
 export interface Candidate { t: number; kind: EventKind; ids: string[]; target?: string }
 
@@ -29,7 +31,7 @@ const horizon = (b: Ball, p: PhysicsParams): number =>
 
 /** Primer t en (0, h] con |A t² + B t + C| = D acercándose; 0 si ya están en contacto y acercándose. */
 function contactTime(A: Vec3, B: Vec3, C: Vec3, D: number, h: number): number {
-  if (dot(C, C) <= (D + TOUCH_EPS) ** 2 && dot(C, B) < 0) return 0;
+  if (dot(C, C) <= (D + TOUCH_EPS) ** 2 && -dot(C, B) > MIN_APPROACH * Math.sqrt(dot(C, C))) return 0;
   const coeffs = [dot(A, A), 2 * dot(A, B), dot(B, B) + 2 * dot(A, C), 2 * dot(B, C), dot(C, C) - D * D];
   for (const t of realRootsInRange(coeffs, T_EPS, h)) {
     const d = add(add(scale(A, t * t), scale(B, t)), C);
@@ -64,7 +66,7 @@ function lineTime(b: Ball, p1: Vec3, p2: Vec3, n: Vec3, offset: number, p: Physi
     return u >= 0 && u <= 1;
   };
   const d0 = dot(sub(q.c, p1), n) - offset;
-  if (d0 <= TOUCH_EPS && d0 > -p.R && dot(q.b, n) < 0 && within(q.c)) return 0;
+  if (d0 <= TOUCH_EPS && d0 > -p.R && dot(q.b, n) < -MIN_APPROACH && within(q.c)) return 0;
   for (const t of realRootsInRange([dot(q.a, n), dot(q.b, n), d0], T_EPS, horizon(b, p))) {
     if (dot(vel(q, t), n) < 0 && within(at(q, t))) return t;
   }

@@ -138,3 +138,31 @@ describe('stateAt', () => {
     expect(stateAt(tl, 1e9, p)[0].r[0]).toBeCloseTo(tl.events.at(-1)!.balls[0].r[0], 12);
   });
 });
+
+describe('final review regressions', () => {
+  test('balls stay on the slate: non-airborne z == R and nothing sinks (lesson-like shots)', () => {
+    const rand = rng(7);
+    for (let i = 0; i < 200; i++) {
+      const cue = B('cue', 0.9 + rand() * 0.6, 0.2 + rand() * 0.6);
+      const ob = B('1', 1.8 + rand() * 0.3, 0.5 + rand() * 0.3);
+      const tl = simulate([cue, ob], shot({
+        azimuth: azimuthTo(cue.r, ob.r) + (rand() - 0.5) * 0.1, cueSpeed: 0.5 + rand() * 4,
+        a: (rand() - 0.5) * 0.8, b: (rand() - 0.5) * 0.8, elevation: ((3 + rand() * 6) * Math.PI) / 180,
+      }), g.boundary, p);
+      for (const e of tl.events) {
+        for (const b of e.balls) {
+          if (b.motion === 'pocketed') continue;
+          expect(b.r[2]).toBeGreaterThanOrEqual(p.R - 1e-6);
+          if (b.motion !== 'airborne') expect(Math.abs(b.r[2] - p.R)).toBeLessThan(1e-9);
+        }
+      }
+    }
+  });
+
+  test('grazing contact with a resting ball does not loop at t = 0 (8 ft fuzz case)', () => {
+    const g8 = buildTable({ ...DEFAULT_TABLE_SPEC, size: '8ft' }, p.R);
+    const pos: [string, number, number][] = [['cue', 2.308225, 0.974443983520195], ['1', 0.4336904124784982, 0.1459605769765214], ['2', 1.8052077394144843, 0.7802591045071487], ['3', 0.028575, 0.9693690891539329], ['4', 0.028575, 0.17477951717841206], ['5', 1.191204386767978, 0.8561506447328604], ['6', 0.041178291995543986, 0.8540783885824378]];
+    const tl = simulate(pos.map(([id, x, y]) => B(id, x, y)), { cueBallId: 'cue', azimuth: 1.320875304109184, elevation: 0.12725882581435144, a: 0.2655133673921227, b: -0.07886005947366356, cueSpeed: 6.189884729683399 }, g8.boundary, p);
+    expect(tl.truncated).toBe(false);
+  });
+});

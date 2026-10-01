@@ -20,7 +20,8 @@ export interface ProgressValue {
   passed: Set<string>;
   stats: (lesson: Lesson) => LessonStats;
   recordAttempt: (a: Omit<Attempt, 'id' | 'schemaVersion' | 'createdAt'>) => Promise<void>;
-  recordSession: (s: Omit<TableSession, 'id' | 'schemaVersion'>) => Promise<void>;
+  /** Inserta o actualiza (por id) una sesión en la mesa real. */
+  recordSession: (s: Omit<TableSession, 'schemaVersion'>) => Promise<void>;
   updateSettings: (patch: Partial<Settings>) => Promise<void>;
 }
 
@@ -64,8 +65,8 @@ export function ProgressProvider({ children, storeFactory = openProgressStore }:
   }, [store]);
 
   const recordSession = useCallback<ProgressValue['recordSession']>(async (s) => {
-    const full: TableSession = { ...s, id: newId(), schemaVersion: SCHEMA_VERSION };
-    setSessions((x) => [...x, full]);
+    const full: TableSession = { ...s, schemaVersion: SCHEMA_VERSION };
+    setSessions((x) => [...x.filter((y) => y.id !== full.id), full]);
     try { await store?.addTableSession(full); } catch (err) { console.error('[progress] addTableSession', err); }
   }, [store]);
 

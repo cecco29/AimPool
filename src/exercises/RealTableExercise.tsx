@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { Exercise } from '../content/types';
 import { layoutToBalls } from '../content/layout';
 import type { TableShot } from '../progress/types';
@@ -17,8 +17,8 @@ function tendency(shots: TableShot[]): string | null {
   return `Errores repartidos (${fina} finas, ${gruesa} gruesas): revisá la alineación y el golpe.`;
 }
 
-export function RealTableExercise({ exercise, env, onFinish, onContinue }: {
-  exercise: RealEx; env: ExerciseEnv; onFinish: (shots: TableShot[]) => void; onContinue: () => void;
+export function RealTableExercise({ exercise, env, onShots, onContinue }: {
+  exercise: RealEx; env: ExerciseEnv; onShots: (shots: TableShot[]) => void; onContinue: () => void;
 }) {
   const R = env.params.R;
   const balls = useMemo(() => layoutToBalls(exercise.setup, env.geometry, R), [exercise.setup, env.geometry, R]);
@@ -31,29 +31,13 @@ export function RealTableExercise({ exercise, env, onFinish, onContinue }: {
   const [shots, setShots] = useState<TableShot[]>([]);
   const [askMiss, setAskMiss] = useState(false);
   const [finished, setFinished] = useState(false);
-  const shotsRef = useRef(shots);
-  shotsRef.current = shots;
-  const finishedRef = useRef(false);
-  const onFinishRef = useRef(onFinish);
-  onFinishRef.current = onFinish;
-
-  useEffect(() => () => {
-    if (!finishedRef.current && shotsRef.current.length > 0) {
-      finishedRef.current = true;
-      onFinishRef.current(shotsRef.current);
-    }
-  }, []);
-
-  const finish = (list: TableShot[]) => {
-    finishedRef.current = true;
-    setFinished(true);
-    onFinish(list);
-  };
+  // Se guarda después de cada tiro: si el celu cierra la app a mitad de la sesión, no se pierde nada.
   const record = (s: TableShot) => {
     const list = [...shots, s];
     setShots(list);
     setAskMiss(false);
-    if (list.length >= exercise.shots) finish(list);
+    onShots(list);
+    if (list.length >= exercise.shots) setFinished(true);
   };
   const hits = shots.filter((s) => s.success).length;
   const advice = tendency(shots);
@@ -85,7 +69,7 @@ export function RealTableExercise({ exercise, env, onFinish, onContinue }: {
             </div>
           )}
           {shots.length > 0 && (
-            <button type="button" className="link" data-testid="real-finish" onClick={() => finish(shots)}>Terminar ahora</button>
+            <button type="button" className="link" data-testid="real-finish" onClick={() => setFinished(true)}>Terminar ahora</button>
           )}
         </>
       ) : (

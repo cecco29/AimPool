@@ -3,6 +3,7 @@ import { lessonById } from '../../content/curriculum';
 import { EstimateExercise } from '../../exercises/EstimateExercise';
 import { RealTableExercise } from '../../exercises/RealTableExercise';
 import { SimShotExercise } from '../../exercises/SimShotExercise';
+import { newId } from '../../progress/store';
 import { useProgress } from '../ProgressContext';
 import { navigate } from '../routes';
 import { TopBar } from '../components/TopBar';
@@ -11,6 +12,7 @@ import { NotFound } from './LessonScreen';
 export function ExerciseScreen({ id, index }: { id: string; index: number }) {
   const { geometry, params, tableSpec, recordAttempt, recordSession } = useProgress();
   const startedAt = useRef(Date.now());
+  const sessionId = useRef(newId());
   const lesson = lessonById(id);
   const ex = lesson?.exercises[index];
   if (!lesson || !ex) return <NotFound />;
@@ -31,7 +33,7 @@ export function ExerciseScreen({ id, index }: { id: string; index: number }) {
       )}
       {ex.kind === 'realTable' && (
         <RealTableExercise exercise={ex} env={env} onContinue={next}
-          onFinish={(shots) => recordSession({ lessonId: id, exerciseIndex: index, shots, startedAt: startedAt.current, endedAt: Date.now() })} />
+          onShots={(shots) => recordSession({ id: sessionId.current, lessonId: id, exerciseIndex: index, shots, startedAt: startedAt.current, endedAt: Date.now() })} />
       )}
     </div>
   );

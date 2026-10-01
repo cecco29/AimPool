@@ -47,6 +47,7 @@ export interface ProgressStore {
   persistent: boolean;
   addAttempt(a: Attempt): Promise<void>;
   listAttempts(): Promise<Attempt[]>;
+  /** Inserta o reemplaza (por id) una sesión en la mesa real. */
   addTableSession(s: TableSession): Promise<void>;
   listTableSessions(): Promise<TableSession[]>;
   getSettings(): Promise<Settings>;

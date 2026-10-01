@@ -13,37 +13,37 @@ const ex = (shots: number): Extract<Exercise, { kind: 'realTable' }> => ({
 });
 
 describe('RealTableExercise', () => {
-  test('completes after N shots', () => {
-    const onFinish = vi.fn();
-    render(<RealTableExercise exercise={ex(3)} env={env} onFinish={onFinish} onContinue={() => {}} />);
+  test('persists after every shot and completes after N shots', () => {
+    const onShots = vi.fn();
+    render(<RealTableExercise exercise={ex(3)} env={env} onShots={onShots} onContinue={() => {}} />);
     fireEvent.click(screen.getByTestId('real-hit'));
+    expect(onShots).toHaveBeenLastCalledWith([{ success: true }]);
     fireEvent.click(screen.getByTestId('real-miss'));
     fireEvent.click(screen.getByTestId('miss-fina'));
     fireEvent.click(screen.getByTestId('real-hit'));
-    expect(onFinish).toHaveBeenCalledTimes(1);
-    expect(onFinish.mock.calls[0][0]).toEqual([{ success: true }, { success: false, miss: 'fina' }, { success: true }]);
+    expect(onShots).toHaveBeenCalledTimes(3);
+    expect(onShots.mock.calls[2][0]).toEqual([{ success: true }, { success: false, miss: 'fina' }, { success: true }]);
     expect(screen.getByTestId('real-summary')).toHaveTextContent('2 de 3');
   });
-  test('finish early', () => {
-    const onFinish = vi.fn();
-    render(<RealTableExercise exercise={ex(10)} env={env} onFinish={onFinish} onContinue={() => {}} />);
+  test('finish early shows the summary with the shots so far', () => {
+    const onShots = vi.fn();
+    render(<RealTableExercise exercise={ex(10)} env={env} onShots={onShots} onContinue={() => {}} />);
     fireEvent.click(screen.getByTestId('real-hit'));
     fireEvent.click(screen.getByTestId('real-finish'));
-    expect(onFinish).toHaveBeenCalledWith([{ success: true }]);
+    expect(screen.getByTestId('real-summary')).toHaveTextContent('1 de 1');
+    expect(onShots).toHaveBeenCalledTimes(1);
   });
-  test('partial session: leaving keeps the logged shots', () => {
-    const onFinish = vi.fn();
-    const { unmount } = render(<RealTableExercise exercise={ex(10)} env={env} onFinish={onFinish} onContinue={() => {}} />);
+  test('partial session: shots are already saved even if the app is killed (no unmount)', () => {
+    const onShots = vi.fn();
+    render(<RealTableExercise exercise={ex(10)} env={env} onShots={onShots} onContinue={() => {}} />);
     fireEvent.click(screen.getByTestId('real-hit'));
     fireEvent.click(screen.getByTestId('real-hit'));
-    unmount();
-    expect(onFinish).toHaveBeenCalledTimes(1);
-    expect(onFinish.mock.calls[0][0]).toHaveLength(2);
+    expect(onShots).toHaveBeenLastCalledWith([{ success: true }, { success: true }]);
   });
-  test('leaving without shots saves nothing', () => {
-    const onFinish = vi.fn();
-    const { unmount } = render(<RealTableExercise exercise={ex(10)} env={env} onFinish={onFinish} onContinue={() => {}} />);
+  test('no shots, nothing saved', () => {
+    const onShots = vi.fn();
+    const { unmount } = render(<RealTableExercise exercise={ex(10)} env={env} onShots={onShots} onContinue={() => {}} />);
     unmount();
-    expect(onFinish).not.toHaveBeenCalled();
+    expect(onShots).not.toHaveBeenCalled();
   });
 });
