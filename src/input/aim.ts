@@ -24,7 +24,8 @@ export function spinFromPoint(x: number, y: number, size: number): [number, numb
   return clampSpin((x - r) / r, (r - y) / r);
 }
 
-export const powerToCueSpeed = (power: number): number => 0.2 + 5.8 * power * power;
+/** Curva 1,5: la parte baja del slider sigue siendo útil para tiros suaves (0,3–6 m/s de taco). */
+export const powerToCueSpeed = (power: number): number => 0.3 + 5.7 * power ** 1.5;
 
 export const powerLabel = (power: number): string => (power < 0.34 ? 'suave' : power < 0.67 ? 'media' : 'fuerte');
 

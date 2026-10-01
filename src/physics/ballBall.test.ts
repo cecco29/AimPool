@@ -48,6 +48,24 @@ describe('resolveBallBall', () => {
     const [, o] = resolveBallBall(cb, ob, q);
     expect(deg(Math.acos(dot(unit(o.v), n)))).toBeCloseTo(expected, 1);
   });
+  test('rolling CB throws much less than stun: 30° cut at 1.341 m/s ≈ 1.0° vs 3.55° (§9 rows 7, 7c)', () => {
+    const q = { ...p, eBall: 1 };
+    const v = 1.341;
+    const stun = cutSetup(30, v);
+    const rolling = cutSetup(30, v, [0, v / p.R, 0]);
+    const throwOf = (s: ReturnType<typeof cutSetup>) => {
+      const [, o] = resolveBallBall({ ...s.cb, motion: s.cb.w[1] ? 'rolling' : 'sliding' }, s.ob, q);
+      return deg(Math.acos(dot(unit(o.v), s.n)));
+    };
+    expect(throwOf(stun)).toBeCloseTo(3.55, 1);
+    expect(Math.abs(throwOf(rolling) - 1.0)).toBeLessThan(0.2);
+  });
+  test('balls on the cloth get no vertical velocity from the collision', () => {
+    const { cb, ob } = cutSetup(30, 2, [0, 2 / p.R, 0]);
+    const [c, o] = resolveBallBall({ ...cb, motion: 'rolling' }, { ...ob, motion: 'stationary' }, p);
+    expect(c.v[2]).toBe(0);
+    expect(o.v[2]).toBe(0);
+  });
   test('gearing outside english gives zero throw (§9 row 7d)', () => {
     const v = 1;
     const phi = Math.PI / 6;

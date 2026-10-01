@@ -4,9 +4,8 @@ import { add, cross, dot, norm, scale, sub, unit, xy } from './vec';
 
 /** Choque instantáneo inelástico con fricción entre bolas de igual masa (§4.1). */
 export function resolveBallBall(b1: Ball, b2: Ball, p: PhysicsParams): [Ball, Ball] {
-  // Sobre el paño el choque es plano: sin esto la fricción con efecto vertical hunde una bola en la pizarra.
-  const planar = b1.motion !== 'airborne' && b2.motion !== 'airborne';
-  const n = unit(planar ? xy(sub(b2.r, b1.r)) : sub(b2.r, b1.r));
+  const onCloth = b1.motion !== 'airborne' && b2.motion !== 'airborne';
+  const n = unit(onCloth ? xy(sub(b2.r, b1.r)) : sub(b2.r, b1.r));
   const e = p.eBall;
   const v1n = dot(b1.v, n);
   const v2n = dot(b2.v, n);
@@ -21,15 +20,18 @@ export function resolveBallBall(b1: Ball, b2: Ball, p: PhysicsParams): [Ball, Ba
 
   // Velocidad relativa de los puntos de contacto (bola 1 en +R n̂, bola 2 en −R n̂), parte tangencial.
   const u = sub(add(b1.v, scale(cross(b1.w, n), p.R)), sub(b2.v, scale(cross(b2.w, n), p.R)));
-  const ut3 = sub(u, scale(n, dot(u, n)));
-  const ut = planar ? xy(ut3) : ut3;
+  // El deslizamiento es 3D (con efecto vertical el punto de contacto se mueve en z): reduce el throw con
+  // la blanca rodando (§4.2, §9 fila 7c). El cambio de giro usa el impulso completo.
+  const ut = sub(u, scale(n, dot(u, n)));
   const s = norm(ut);
   if (s > 1e-12) {
     const mag = Math.min(ballBallFriction(p, s) * jn, s / 7);
     const d = scale(ut, -mag / s);
     const dw = scale(cross(n, d), 5 / (2 * p.R));
-    v1 = add(v1, d);
-    v2 = sub(v2, d);
+    // Sobre el paño la componente vertical del impulso la absorbe la pizarra: sin esto una bola se hundiría.
+    const dv = onCloth ? xy(d) : d;
+    v1 = add(v1, dv);
+    v2 = sub(v2, dv);
     w1 = add(w1, dw);
     w2 = add(w2, dw);
   }
